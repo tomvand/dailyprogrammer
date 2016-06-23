@@ -52,6 +52,13 @@ void *vector_pop(VECTOR *v) {
   return data;
 }
 
+void vector_remove(VECTOR *v, int index) {
+  if (index >= 0 && index < v->size - 1) {
+    for (int i = index; i < v->size - 1; i++) v->data[i] = v->data[i + 1];
+  }
+  v->size--;
+}
+
 void *vector_get(VECTOR *v, int index) {
   if (index < 0 || index >= v->size) return NULL;
   return v->data[index];
