@@ -1,6 +1,0 @@
-AlignAfterOpenBracket: DontAlign
-AllowShortIfStatementsOnASingleLine: true
-AllowShortLoopsOnASingleLine: true
-AllowShortFunctionsOnASingleLine: None
-AlignConsecutiveAssignments: true
-MaxEmptyLinesToKeep: 2
