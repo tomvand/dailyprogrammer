@@ -9,109 +9,114 @@
 
 #define BUFFER_SIZE 256
 
-void print_indent(int depth) {
-  for (int i = 0; i < depth; i++) fputs("  ", stdout);
-}
+// Printers for various formats
+// For each token, the functions pre_print, on_print and post_print are called.
+// pre_print and post_print can modify indent depth based on keywords, and
+// request a newline by setting do_newline to TRUE.
+// on_print is responsible for printing the token to out and adding a newline
+// if req'd
+struct printer {
+  void (*pre_print)(const char *tok, int *do_newline, int *depth);
+  void (*on_print)(const char *tok, int *do_newline, int depth, FILE *out);
+  void (*post_print)(const char *tok, int *do_newline, int *depth);
+};
 
-void print_basic(VECTOR *tokens) {
+void print(FILE *out, VECTOR *tokens, const struct printer *printer) {
   int depth      = 0;
   int do_newline = 0;
 
   for (int i = 0; i < vector_size(tokens); i++) {
     char *tok = (char *)vector_get(tokens, i);
-    if (strcmp(tok, "else.") == 0 || strcmp(tok, "end.") == 0) {
-      depth--;
-      do_newline = 1;
-    } else if (strcmp(tok, "if.") == 0 || strncmp(tok, "for_", 4) == 0 ||
-               strcmp(tok, "label_.") == 0) {
-      do_newline = 1;
-    }
-    if (do_newline) {
-      fputc('\n', stdout);
-      print_indent(depth);
-      do_newline = 0;
-    }
-    fprintf(stdout, "%s ", tok);
-    if (strcmp(tok, "do.") == 0 || strcmp(tok, "else.") == 0) {
-      depth++;
-      do_newline = 1;
-    } else if (strcmp(tok, "end.") == 0) {
-      do_newline = 1;
-    }
+    printer->pre_print(tok, &do_newline, &depth);
+    printer->on_print(tok, &do_newline, depth, out);
+    printer->post_print(tok, &do_newline, &depth);
   }
 }
 
-void print_python(VECTOR *tokens) {
-  int depth      = 0;
-  int do_newline = 0;
+void print_indent(int depth, FILE *out) {
+  for (int i = 0; i < depth; i++) fputs("  ", out);
+}
 
-  for (int i = 0; i < vector_size(tokens); i++) {
-    char *tok = (char *)vector_get(tokens, i);
-    if (strcmp(tok, "else.") == 0) {
-      depth--;
-      do_newline = 1;
-    } else if (strcmp(tok, "if.") == 0 || strncmp(tok, "for_", 4) == 0 ||
-               strcmp(tok, "label_.") == 0) {
-      do_newline = 1;
-    } else if (strcmp(tok, "end.") == 0) {
-      depth--;
-      do_newline = 0;
-    }
-    if (do_newline) {
-      fputc('\n', stdout);
-      print_indent(depth);
-      do_newline = 0;
-    }
-    fprintf(stdout, "%s ", tok);
-    if (strcmp(tok, "do.") == 0 || strcmp(tok, "else.") == 0) {
-      depth++;
-      do_newline = 1;
-    } else if (strcmp(tok, "end.") == 0) {
-      do_newline = 1;
-    }
+// Basic format
+void print_basic_pre(const char *tok, int *do_newline, int *depth) {
+  if (strcmp(tok, "else.") == 0 || strcmp(tok, "end.") == 0) {
+    (*depth)--;
+    *do_newline = 1;
+  } else if (strcmp(tok, "if.") == 0 || strncmp(tok, "for_", 4) == 0 ||
+             strcmp(tok, "label_.") == 0) {
+    *do_newline = 1;
   }
 }
 
-void print_implied(VECTOR *tokens) {
-  int depth      = 0;
-  int do_newline = 0;
+void print_basic_on(const char *tok, int *do_newline, int depth, FILE *out) {
+  if (*do_newline) {
+    fputc('\n', out);
+    print_indent(depth, out);
+    *do_newline = 0;
+  }
+  if (strcmp(tok, "label_.") != 0) fprintf(out, "%s ", tok);
+}
 
-  for (int i = 0; i < vector_size(tokens); i++) {
-    char *tok = (char *)vector_get(tokens, i);
-    if (strcmp(tok, "else.") == 0) {
-      depth--;
-      do_newline = 1;
-    } else if (strcmp(tok, "if.") == 0 || strncmp(tok, "for_", 4) == 0 ||
-               strcmp(tok, "label_.") == 0) {
-      do_newline = 1;
-    } else if (strcmp(tok, "end.") == 0) {
-      depth--;
-      do_newline = 0;
-    }
-    if (do_newline) {
-      fputc('\n', stdout);
-      print_indent(depth);
-      do_newline = 0;
-    }
-
-    if (strcmp(tok, "do.") != 0 && strcmp(tok, "end.") != 0) {
-      fprintf(stdout, "%s ", tok);
-    }
-
-    if (strcmp(tok, "do.") == 0 || strcmp(tok, "else.") == 0) {
-      depth++;
-      do_newline = 1;
-    } else if (strcmp(tok, "end.") == 0) {
-      do_newline = 1;
-    }
+void print_basic_post(const char *tok, int *do_newline, int *depth) {
+  if (strcmp(tok, "do.") == 0 || strcmp(tok, "else.") == 0) {
+    (*depth)++;
+    *do_newline = 1;
+  } else if (strcmp(tok, "end.") == 0) {
+    *do_newline = 1;
   }
 }
 
-void print_linear(VECTOR *tokens) {
-  for (int i = 0; i < vector_size(tokens); i++)
-    fprintf(stdout, "%s ", (char *)vector_get(tokens, i));
+const struct printer PRINTER_BASIC = {
+    print_basic_pre, print_basic_on, print_basic_post};
+
+// Linear format
+void print_linear_pre(const char *tok, int *do_newline, int *depth) {
 }
 
+void print_linear_on(const char *tok, int *do_newline, int depth, FILE *out) {
+  fprintf(out, "%s ", tok);
+}
+
+void print_linear_post(const char *tok, int *do_newline, int *depth) {
+}
+
+const struct printer PRINTER_LINEAR = {
+    print_linear_pre, print_linear_on, print_linear_post};
+
+// Python format
+void print_python_pre(const char *tok, int *do_newline, int *depth) {
+  if (strcmp(tok, "else.") == 0) {
+    (*depth)--;
+    *do_newline = 1;
+  } else if (strcmp(tok, "if.") == 0 || strncmp(tok, "for_", 4) == 0 ||
+             strcmp(tok, "label_.") == 0) {
+    *do_newline = 1;
+  } else if (strcmp(tok, "end.") == 0) {
+    (*depth)--;
+    *do_newline = 0;
+  }
+}
+
+const struct printer PRINTER_PYTHON = {
+    print_python_pre, print_basic_on, print_basic_post};
+
+// Implied Python
+void print_implied_on(const char *tok, int *do_newline, int depth, FILE *out) {
+  if (*do_newline) {
+    fputc('\n', out);
+    print_indent(depth, out);
+    *do_newline = 0;
+  }
+  if (strcmp(tok, "label_.") != 0 && strcmp(tok, "do.") != 0 &&
+      strcmp(tok, "end.") != 0)
+    fprintf(out, "%s ", tok);
+}
+
+const struct printer PRINTER_IMPLIED = {
+    print_python_pre, print_implied_on, print_basic_post};
+
+
+// Main entry point
 int main(int argc, char **argv) {
   // Outline:
   // Read input line by line, word by word
@@ -178,18 +183,18 @@ int main(int argc, char **argv) {
   }
 
   puts("\nBasic:\n");
-  print_basic(tokens);
+  print(stdout, tokens, &PRINTER_BASIC);
   puts("\n");
 
   puts("\nLinear:\n");
-  print_linear(tokens);
+  print(stdout, tokens, &PRINTER_LINEAR);
   puts("\n");
 
   puts("\nPython:\n");
-  print_python(tokens);
+  print(stdout, tokens, &PRINTER_PYTHON);
   puts("\n");
 
   puts("\nImplied Python:\n");
-  print_implied(tokens);
+  print(stdout, tokens, &PRINTER_IMPLIED);
   puts("\n");
 }
