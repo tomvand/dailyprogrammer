@@ -116,8 +116,8 @@ const struct printer PRINTER_IMPLIED = {
     print_python_pre, print_implied_on, print_basic_post};
 
 
-// Main entry point
-int main(int argc, char **argv) {
+// Parser
+void parse(FILE *in, VECTOR *tokens) {
   // Outline:
   // Read input line by line, word by word
   //  Keep track of newlines, indents to add keywords if req'd
@@ -125,18 +125,12 @@ int main(int argc, char **argv) {
   //    Ignore 'do.', already added by rule above
   //    Add 'label_.'' at newline, will be fixed later if req'd
   //    TODO Add 'end.'
-  //  Remove unnecessary 'label_.'s
-  //    Remove when arg -2 is 'for_X' or 'if.'
-  //    Remove when arg -1 is keyword
-  //    Remove when arg +1 is keyword
-  //    Remove at end of file
-  //  Linear format is the most explicit in terms of newlines and indents
-  // Store tokens in linked list
-  //
-  // Iterate over list using appropriate printing function.
+  // Remove unnecessary 'label_.'s
+  //  Remove when arg -2 is 'for_X' or 'if.'
+  //  Remove when arg -1 is keyword
+  //  Remove when arg +1 is keyword
+  //  Remove at end of file
 
-  // Read list of tokens
-  VECTOR *tokens = vector_new();
   char buffer[BUFFER_SIZE];
   char *tok     = NULL;
   char *tok_dup = NULL;
@@ -181,20 +175,21 @@ int main(int argc, char **argv) {
       }
     }
   }
+}
 
-  puts("\nBasic:\n");
+
+// Main entry point
+int main(int argc, char **argv) {
+  VECTOR *tokens = vector_new();
+  parse(stdin, tokens);
+
+  puts("\n\nBasic:\n");
   print(stdout, tokens, &PRINTER_BASIC);
-  puts("\n");
-
-  puts("\nLinear:\n");
+  puts("\n\nLinear:\n");
   print(stdout, tokens, &PRINTER_LINEAR);
-  puts("\n");
-
-  puts("\nPython:\n");
+  puts("\n\nPython:\n");
   print(stdout, tokens, &PRINTER_PYTHON);
-  puts("\n");
-
-  puts("\nImplied Python:\n");
+  puts("\n\nImplied Python:\n");
   print(stdout, tokens, &PRINTER_IMPLIED);
   puts("\n");
 }

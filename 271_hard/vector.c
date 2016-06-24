@@ -29,6 +29,7 @@ VECTOR *vector_new() {
 }
 
 void vector_free(VECTOR *vector) {
+  free(vector->data);
   free(vector);
 }
 
