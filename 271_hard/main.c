@@ -2,6 +2,7 @@
 #include "vector.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -117,6 +118,13 @@ const struct printer PRINTER_IMPLIED = {
 
 
 // Parser
+int get_indent(const char *line) {
+  int i = 0;
+  while (isspace(line[i++]))
+    ;
+  return i - 1;
+}
+
 void parse(FILE *in, VECTOR *tokens) {
   // Outline:
   // Read input line by line, word by word
@@ -135,13 +143,32 @@ void parse(FILE *in, VECTOR *tokens) {
   char *tok     = NULL;
   char *tok_dup = NULL;
   int is_do     = 0; // Set to 1 after reading 'if.' or 'for_X.'
+
+  int depth_indents[16] = {0};
+  int depth_current     = 0;
+
+  // Read line by line
   while (fgets(buffer, BUFFER_SIZE, stdin) != NULL) {
+    // Update line indent
+    int new_indent = get_indent(buffer);
+    if (new_indent != -1) {
+      if (new_indent > depth_indents[depth_current]) {
+        depth_indents[++depth_current] = get_indent(buffer);
+      } else if (new_indent < depth_indents[depth_current]) {
+        while (depth_current > 0 && depth_indents[--depth_current] > new_indent)
+          vector_push(tokens, strdup("end."));
+      }
+    }
+
+    // Read word for word
     for (tok = strtok(buffer, DELIM); tok != NULL; tok = strtok(NULL, DELIM)) {
       tok_dup = strdup(tok);
       assert(tok_dup != NULL);
+
       if (strcmp(tok_dup, "do.") != 0) {
         vector_push(tokens, (void *)tok_dup);
       }
+
       if (is_do) {
         vector_push(tokens, strdup("do."));
         is_do = 0;
