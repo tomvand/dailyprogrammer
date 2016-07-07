@@ -1,0 +1,8 @@
+D=. x +/&i.&>:&# y for_i. 1+i.#x
+  for_j. 1+i.#y do.
+    if. ((<:i){x)=(<:j){y
+      D=.(D {~<<:i,j) (<i,j)} D
+    else.
+      min=. 1+<./D{~(i,j) <@:-"1#:1 2 3
+      D=. min (<i,j)} D end.
+{:{:D
