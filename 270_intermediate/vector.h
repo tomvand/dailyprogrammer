@@ -1,3 +1,7 @@
+#ifndef VECTOR_H__
+#define VECTOR_H__
+
+
 typedef struct vector VECTOR;
 
 VECTOR *vector_new();
@@ -7,3 +11,6 @@ void *vector_add(VECTOR *vector, void *data);
 void *vector_get(VECTOR *vector, int index);
 
 int vector_size(VECTOR *vector);
+
+
+#endif

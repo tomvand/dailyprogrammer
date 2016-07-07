@@ -1,3 +1,7 @@
+#ifndef DICT_H__
+#define DICT_H__
+
+
 typedef struct dict DICT;
 
 DICT *dict_new();
@@ -7,3 +11,6 @@ void *lookup(const DICT *dict, const char *key);
 void insert(DICT *dict, const char *key, void *data);
 
 char *strdup(const char *str);
+
+
+#endif

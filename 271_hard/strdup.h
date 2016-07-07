@@ -1,3 +1,7 @@
+#ifndef STRDUP_H__
+#define STRDUP_H__
+
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -6,3 +10,6 @@ char *strdup(const char *str) {
   if (dup != NULL) strcpy(dup, str);
   return dup;
 }
+
+
+#endif
